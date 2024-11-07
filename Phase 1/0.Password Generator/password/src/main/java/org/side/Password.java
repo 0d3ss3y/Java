@@ -74,12 +74,31 @@ public class Password {
     }
 
     private static String processOption(int Level){
-        boolean encrypt, special = false;
+        boolean special, case_sensitive = false;
+
 
         switch (Level){
             case 1:
-                length = get_length();
+                int length = get_length();
 
         }
+        return "";
+    }
+
+    private static int get_length(){
+        try {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter length (Max length = 16):\n> ");
+            int length = scanner.nextInt();
+
+            if (length < 1 || length > 16)
+                return 0;
+            else
+                return length;
+        } catch (Exception e) {
+            System.out.println("Invalid entry");
+        }
+
+        return 0;
     }
 }
