@@ -1,132 +1,152 @@
 package org.side;
 
 import org.side.generatePassword.PasswordGenerator;
-
 import java.util.Scanner;
 
 public class Password {
-    static boolean specialCases, caseSensitive,numberCases = false;
+    private static final int MIN_LENGTH = 4;
+    private static final int MAX_LENGTH = 16;
+    private static final int DEFAULT_LENGTH = 8;
+    private static final int MIN_LEVEL = 1;
+    private static final int MAX_LEVEL = 3;
 
-    public static void main(String[] args) {
-        heading();
-        int level = get_option();
-        String password = processOption(level);
-        System.out.println("\nYour password: " + password);
+    private final Scanner scanner;
+    private final PasswordGenerator passwordGenerator;
+
+    public Password() {
+        this.scanner = new Scanner(System.in);
+        this.passwordGenerator = new PasswordGenerator();
     }
 
-    private static void heading() {
-        System.out.println("Password Generator\n");
-        rules();
+    public void start() {
+        try {
+            displayHeader();
+            int level = getSecurityLevel();
+            String password = generatePasswordForLevel(level);
+            displayGeneratedPassword(password);
+        } finally {
+            scanner.close();
+        }
     }
 
-    private static void rules() {
-        System.out.println("Password Rules And Regulations");
-        System.out.println(
-                """
-                        (1) Generated psaswords will include the following:
-                        - specified length
-                        - uppercasing (optional)
-                        - lowercasing (optional)
-                        - special (optional)
-                        
-                        (2) Password Encryption:
-                        - Passwords as encrypted using SHA-256 for secure storage
-                        
-                        (3) Password Validation:
-                        - Depending on level of difficulty different validations will be checked:
-                        
-                        (4) Levels :
-                        * Level 1.  -> Provide basic length validation
-                        * Level 2.  -> Provide case sensitive and length validation
-                        * Level 3.  -> Provide case sensitive, special char and length validation
-                        
-                        """
+    private void displayHeader() {
+        System.out.println("\n=== Password Generator ===\n");
+        displayRules();
+    }
 
+    private void displayRules() {
+        System.out.println("Password Rules and Requirements:");
+        System.out.println("""
+            1. Password Characteristics:
+               • Length: 4-16 characters
+               • Optional uppercase letters
+               • Optional special characters
+               • Optional numbers
+            
+            2. Security Levels:
+               Level 1: Basic (length only)
+               Level 2: Intermediate (length + character types)
+               Level 3: Strong (all character types)
+            
+            3. Password Security:
+               • Cryptographically secure generation
+               • Meets modern security standards
+            """);
+    }
+
+    private int getSecurityLevel() {
+        while (true) {
+            try {
+                System.out.printf("\nSelect security level (%d-%d) [default: %d]: ", MIN_LEVEL, MAX_LEVEL, MIN_LEVEL);
+                String input = scanner.nextLine().trim();
+
+                if (input.isEmpty()) {
+                    return MIN_LEVEL;
+                }
+
+                int level = Integer.parseInt(input);
+                if (level >= MIN_LEVEL && level <= MAX_LEVEL) {
+                    return level;
+                }
+
+                System.out.printf("Please enter a level between %d and %d\n", MIN_LEVEL, MAX_LEVEL);
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number");
+            }
+        }
+    }
+
+    private int getPasswordLength() {
+        while (true) {
+            try {
+                System.out.printf("\nEnter password length (%d-%d) [default: %d]: ",
+                        MIN_LENGTH, MAX_LENGTH, DEFAULT_LENGTH);
+                String input = scanner.nextLine().trim();
+
+                if (input.isEmpty()) {
+                    return DEFAULT_LENGTH;
+                }
+
+                int length = Integer.parseInt(input);
+                if (length >= MIN_LENGTH && length <= MAX_LENGTH) {
+                    return length;
+                }
+
+                System.out.printf("Please enter a length between %d and %d\n", MIN_LENGTH, MAX_LENGTH);
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number");
+            }
+        }
+    }
+
+    private PasswordOptions getPasswordOptions() {
+        System.out.println("\nSelect character types to include:");
+        System.out.println("[U]ppercase letters");
+        System.out.println("[S]pecial characters");
+        System.out.println("[N]umbers");
+        System.out.print("Enter options (e.g., USN or press Enter for none): ");
+
+        String input = scanner.nextLine().toUpperCase();
+
+        return new PasswordOptions(
+                input.contains("U"),
+                input.contains("S"),
+                input.contains("N")
         );
     }
 
-    private static int get_option() {
-//      1
+    private String generatePasswordForLevel(int level) {
+        int length = getPasswordLength();
 
-        try{
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Select a Level\nDefault is 1\n>");
-            int level = scanner.nextInt();
-
-            if (level < 1 || level > 3){
-                throw new Exception();
-            }else{
-                return level;
+        return switch (level) {
+            case 1 -> passwordGenerator.generatePassword(length, false, false, false);
+            case 2 -> {
+                PasswordOptions options = getPasswordOptions();
+                yield passwordGenerator.generatePassword(
+                        length,
+                        options.useSpecialChars(),
+                        options.useCaseSensitive(),
+                        options.useNumbers()
+                );
             }
-
-        }catch (Exception e){
-            System.out.println("Invalid entry");
-        }
-
-        return 1;
-
+            case 3 -> passwordGenerator.generatePassword(length, true, true, true);
+            default -> throw new IllegalArgumentException("Invalid security level: " + level);
+        };
     }
 
-    private static String processOption(int Level) {
-        int len = get_length();
-        String password = "";
-
-        if (Level == 1 || Level == 3) {
-            if (Level == 1)
-                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, numberCases);
-            else
-                password = new PasswordGenerator().generatePassword(len, true, true, true);
-        }
-        else {
-            String caseUse = get_Case();
-            if (caseUse.equalsIgnoreCase("c"))
-                password = new PasswordGenerator().generatePassword(len, specialCases, true, numberCases);
-            else if (caseUse.equalsIgnoreCase("s"))
-                password = new PasswordGenerator().generatePassword(len, true, caseSensitive, numberCases);
-            else if (caseUse.equalsIgnoreCase("n"))
-                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, true);
-            else
-                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, numberCases);
-        }
-
-        return password;
+    private void displayGeneratedPassword(String password) {
+        System.out.println("\n=== Generated Password ===");
+        System.out.println(password);
+        System.out.println("=========================\n");
     }
 
-    private static String get_Case() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("\nEnter the following to use the minimum requirement:");
-        System.out.println("""
-                    [N] = numbers
-                    [S] = special chars
-                    [C] = caseSensitive
-                    """);
-        System.out.print("> ");
-        String input = scanner.nextLine();
+    private record PasswordOptions(
+            boolean useCaseSensitive,
+            boolean useSpecialChars,
+            boolean useNumbers
+    ) {}
 
-        if (input.equalsIgnoreCase("N"))
-            return input;
-        else if (input.equalsIgnoreCase("S"))
-            return input;
-        else if (input.equalsIgnoreCase("C"))
-            return input;
-        else
-            return null;
-    }
-
-    private static int get_length() {
-        try {
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter length (Max length = 16) (Min length = 4):\nDefault length is 4\n> ");
-            int length = scanner.nextInt();
-
-            if (length < 4 || length > 16)
-                return 4;
-            else
-                return length;
-        } catch (Exception e) {
-            System.out.println("Invalid entry");
-        }
-
-        return 4;
+    public static void main(String[] args) {
+        new Password().start();
     }
 }
