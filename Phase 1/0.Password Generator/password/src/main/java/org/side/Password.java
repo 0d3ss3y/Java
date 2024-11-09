@@ -1,12 +1,17 @@
 package org.side;
 
+import org.side.generatePassword.PasswordGenerator;
+
 import java.util.Scanner;
 
 public class Password {
+    static boolean specialCases, caseSensitive,numberCases = false;
+
     public static void main(String[] args) {
         heading();
         int level = get_option();
         String password = processOption(level);
+        System.out.println("\nYour password: " + password);
     }
 
     private static void heading() {
@@ -41,23 +46,11 @@ public class Password {
     }
 
     private static int get_option() {
-        System.out.println("""
-                Level 1:
-                 -> Base password with user determined length
-                  
-                Level 2:
-                 -> Password with user determined length
-                 -> 1 additional option of adding special chars or case sensitivity
-                 
-                Level 3:
-                 -> Password with user determined length
-                 -> Provide case sensitivity
-                 -> Provide special chars
-                """);
+//      1
 
-        Scanner scanner = new Scanner(System.in);
         try{
-            System.out.print("Select a Level\n>");
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Select a Level\nDefault is 1\n>");
             int level = scanner.nextInt();
 
             if (level < 1 || level > 3){
@@ -70,35 +63,70 @@ public class Password {
             System.out.println("Invalid entry");
         }
 
-        return 0;
+        return 1;
+
     }
 
-    private static String processOption(int Level){
-        boolean special, case_sensitive = false;
+    private static String processOption(int Level) {
+        int len = get_length();
+        String password = "";
 
-
-        switch (Level){
-            case 1:
-                int length = get_length();
-
+        if (Level == 1 || Level == 3) {
+            if (Level == 1)
+                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, numberCases);
+            else
+                password = new PasswordGenerator().generatePassword(len, true, true, true);
         }
-        return "";
+        else {
+            String caseUse = get_Case();
+            if (caseUse.equalsIgnoreCase("c"))
+                password = new PasswordGenerator().generatePassword(len, specialCases, true, numberCases);
+            else if (caseUse.equalsIgnoreCase("s"))
+                password = new PasswordGenerator().generatePassword(len, true, caseSensitive, numberCases);
+            else if (caseUse.equalsIgnoreCase("n"))
+                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, true);
+            else
+                password = new PasswordGenerator().generatePassword(len, specialCases, caseSensitive, numberCases);
+        }
+
+        return password;
     }
 
-    private static int get_length(){
+    private static String get_Case() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\nEnter the following to use the minimum requirement:");
+        System.out.println("""
+                    [N] = numbers
+                    [S] = special chars
+                    [C] = caseSensitive
+                    """);
+        System.out.print("> ");
+        String input = scanner.nextLine();
+
+        if (input.equalsIgnoreCase("N"))
+            return input;
+        else if (input.equalsIgnoreCase("S"))
+            return input;
+        else if (input.equalsIgnoreCase("C"))
+            return input;
+        else
+            return null;
+    }
+
+    private static int get_length() {
         try {
             Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter length (Max length = 16):\n> ");
+            System.out.print("Enter length (Max length = 16) (Min length = 4):\nDefault length is 4\n> ");
             int length = scanner.nextInt();
 
-            if (length < 1 || length > 16)
-                return 0;
+            if (length < 4 || length > 16)
+                return 4;
             else
                 return length;
         } catch (Exception e) {
             System.out.println("Invalid entry");
         }
 
-        return 0;
+        return 4;
     }
 }
