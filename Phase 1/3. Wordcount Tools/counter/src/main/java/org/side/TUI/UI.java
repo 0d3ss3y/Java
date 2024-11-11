@@ -129,7 +129,7 @@ public interface UI {
     }
 
     static void showStatus(String status) {
-        System.out.println("Status > " + status);
+        System.out.println("Status: " + status);
         showSeparator();
     }
 
